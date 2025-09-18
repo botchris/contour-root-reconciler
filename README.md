@@ -14,11 +14,15 @@ between root and child proxies based on labels.
 
 ## Motivation
 
-In a large Kubernetes cluster with many services, it can be cumbersome to
-manually maintain `HTTPProxy` resources, especially when new services are
-frequently added or removed. By using a controller to automate the inclusion
-of child proxies into root proxies, we can reduce operational overhead and
-ensure that the routing configuration remains consistent.
+In a large Kubernetes cluster with many services under the same domain
+(e.g., `example.com`), it is common to use a root `HTTPProxy` to route traffic
+to various child proxies based on path prefixes. However, manually updating the
+root proxy each time a new child proxy (service) is created/removed can
+be error-prone and tedious.
+
+By using a controller to automate the inclusion of child proxies into root
+proxies, we can reduce operational overhead and ensure that the routing
+configuration remains consistent.
 
 ### Example
 
@@ -72,8 +76,22 @@ spec:
 
 ## Installation
 
-The recommended way to install the Contour Root Proxy Reconciler is via
-the provided Docker image `botchrishub/contour-root-reconciler:latest`.
+You can install the controller using the provided YAML manifest or via Helm.
 
-You can deploy it in your Kubernetes cluster using a Deployment manifest,
-use the example file located at `example/deployment.yaml` as a starting point.
+### Helm Chart (Recommended)
+
+You can also install the controller using Helm. First, add the Helm repository
+and then install the chart:
+
+```shell
+helm repo add contour-root-reconciler https://botchris.github.io/contour-root-reconciler
+helm repo update
+helm install my-reconciler contour-root-reconciler/contour-root-reconciler
+```
+
+### Docker Image
+
+You can use the Docker image `botchrishub/contour-root-reconciler:latest`,
+and manually deploy the controller in your Kubernetes cluster using a
+Deployment manifest. Use the example file located at `example/deployment.yaml`
+as a starting point.
