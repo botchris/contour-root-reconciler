@@ -20,20 +20,9 @@ frequently added or removed. By using a controller to automate the inclusion
 of child proxies into root proxies, we can reduce operational overhead and
 ensure that the routing configuration remains consistent.
 
-## Usage
-
-1. Deploy the controller in your Kubernetes cluster.
-2. Label your child `HTTPProxy` resources with the `root-proxy` label,
-   specifying the name of the root `HTTPProxy` they should be included in.
-3. The controller will automatically update the root `HTTPProxy` to include
-   the child proxies.
-4. Monitor the controller logs for any errors or issues.
-5. Ensure that the controller has the necessary permissions to read and write
-   `HTTPProxy` resources.
-
 ### Example
 
-Given a root `HTTPProxy` named `root-proxy`:
+Given a root `HTTPProxy` named `my-root-proxy`:
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -54,7 +43,7 @@ kind: HTTPProxy
 metadata:
   name: child-proxy-one
   labels:
-    root-proxy: my-root-proxy
+    root-proxy: my-root-proxy # This label indicates the root proxy
 spec:
   routes:
     - conditions:
@@ -64,3 +53,27 @@ spec:
           port: 8080
           protocol: h2
 ```
+
+The controller will automatically update `my-root-proxy` to include
+`child-proxy-one` as follow:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: my-root-proxy
+spec:
+  virtualhost:
+    fqdn: example.com
+    includes:
+      - name: child-proxy-one
+        namespace: <namespace-of-child-proxy>
+```
+
+## Installation
+
+The recommended way to install the Contour Root Proxy Reconciler is via
+the provided Docker image `botchrishub/contour-root-reconciler:latest`.
+
+You can deploy it in your Kubernetes cluster using a Deployment manifest,
+use the example file located at `example/deployment.yaml` as a starting point.

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: contour-root-reconciler
+description: A Helm chart for installing Contour Root Reconciler
+type: application
+version: 0.0.1
+appVersion: "latest"

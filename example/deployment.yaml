@@ -1,0 +1,61 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: contour-root-reconciler
+  namespace: projectcontour
+  labels:
+    app: contour-root-reconciler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: contour-root-reconciler
+  template:
+    metadata:
+      labels:
+        app: contour-root-reconciler
+    spec:
+      containers:
+        - name: contour-root-reconciler
+          image: botchrishub/contour-root-reconciler:latest
+          command:
+            - /usr/local/bin/proxy-reconciler
+          args:
+            - '--metrics-bind-address=:8080'
+            - '--health-probe-bind-address=:8081'
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+            - name: health
+              containerPort: 8081
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+              scheme: HTTP
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          imagePullPolicy: Always
+      restartPolicy: Always

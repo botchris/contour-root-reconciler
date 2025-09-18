@@ -1,0 +1,62 @@
+replicaCount: 1
+
+image:
+  repository: botchrishub/contour-root-reconciler
+  tag: "latest"
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+command:
+  - /usr/local/bin/proxy-reconciler
+
+args:
+  - "--metrics-bind-address=:8080"
+  - "--health-probe-bind-address=:8081"
+
+service:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: metrics
+      protocol: TCP
+    - name: health
+      port: 8081
+      targetPort: health
+      protocol: TCP
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: health
+    scheme: HTTP
+  initialDelaySeconds: 10
+  timeoutSeconds: 1
+  periodSeconds: 20
+  successThreshold: 1
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: health
+    scheme: HTTP
+  initialDelaySeconds: 5
+  timeoutSeconds: 1
+  periodSeconds: 10
+  successThreshold: 1
+  failureThreshold: 3
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
