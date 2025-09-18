@@ -54,7 +54,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	reconciler := internal.NewChildReconciler(mgr.GetClient())
+	reconciler := internal.NewChildReconciler(mgr.GetClient(), ctrl.Log.WithName("http-proxy-reconciler"))
 	if eErr := reconciler.SetupWithManager(mgr); eErr != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ChildReconciler")
 		os.Exit(1)

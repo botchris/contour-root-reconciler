@@ -2,7 +2,9 @@ package internal
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/go-logr/logr"
 	schemav1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -18,11 +20,15 @@ type Reconciler interface {
 
 type childReconciler struct {
 	client client.Client
+	logger logr.Logger
 }
 
 // NewChildReconciler returns a new reconcile.Reconciler for HTTPProxy children.
-func NewChildReconciler(c client.Client) Reconciler {
-	return &childReconciler{client: c}
+func NewChildReconciler(c client.Client, logger logr.Logger) Reconciler {
+	return &childReconciler{
+		client: c,
+		logger: logger,
+	}
 }
 
 func (r *childReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -31,10 +37,18 @@ func (r *childReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	logger := r.logger.WithValues(
+		"child", req.NamespacedName,
+		"resourceVersion", child.ResourceVersion,
+		"deletionTimestamp", child.DeletionTimestamp,
+	)
+
 	rootName, hasRoot := child.Labels["root-proxy"]
 	if !hasRoot {
 		return ctrl.Result{}, nil
 	}
+
+	logger.Info("Reconciling child HTTPProxy", "root", rootName)
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		root := &schemav1.HTTPProxy{}
@@ -44,7 +58,14 @@ func (r *childReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return err
 		}
 
-		return r.reconcileChild(ctx, root, child)
+		eErr := r.reconcileChild(ctx, root, child)
+		if eErr != nil {
+			logger.Error(eErr, "Failed to reconcile child with root", "root", rootKey)
+		} else {
+			logger.Info("Successfully reconciled child with root", "root", rootKey)
+		}
+
+		return eErr
 	})
 	if err != nil {
 		return ctrl.Result{}, err
@@ -65,14 +86,12 @@ func (r *childReconciler) reconcileChild(ctx context.Context, root *schemav1.HTT
 	// Child marked for deletion -> remove from root.
 	if child.DeletionTimestamp != nil {
 		for i := range root.Spec.Includes {
-			if root.Spec.Includes[i].Name == include.Name && root.Spec.Includes[i].Namespace == include.Namespace {
-				changed = true
-
-				continue
+			if !r.equalsInclude(root.Spec.Includes[i], include) {
+				newIncludes = append(newIncludes, root.Spec.Includes[i])
 			}
-
-			newIncludes = append(newIncludes, root.Spec.Includes[i])
 		}
+
+		changed = true
 	} else {
 		// New child being added -> append to "include" section
 		if !r.containsImport(root.Spec.Includes, include) {
@@ -93,12 +112,31 @@ func (r *childReconciler) reconcileChild(ctx context.Context, root *schemav1.HTT
 	}
 
 	if changed {
-		root.Spec.Includes = newIncludes
+		root.Spec.Includes = r.dedupIncludes(newIncludes)
 
 		return r.client.Update(ctx, root)
 	}
 
 	return nil
+}
+
+func (r *childReconciler) equalsInclude(a, b schemav1.Include) bool {
+	return a.Name == b.Name && a.Namespace == b.Namespace
+}
+
+func (r *childReconciler) dedupIncludes(includes []schemav1.Include) []schemav1.Include {
+	seen := make(map[string]struct{})
+	result := make([]schemav1.Include, 0, len(includes))
+
+	for i := range includes {
+		key := fmt.Sprintf("%s/%s", includes[i].Namespace, includes[i].Name)
+		if _, ok := seen[key]; !ok {
+			seen[key] = struct{}{}
+			result = append(result, includes[i])
+		}
+	}
+
+	return result
 }
 
 func (r *childReconciler) containsImport(stack []schemav1.Include, target schemav1.Include) bool {

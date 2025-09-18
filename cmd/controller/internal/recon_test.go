@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -47,7 +48,8 @@ func TestReconcile_AddsChildToRoot(t *testing.T) {
 		WithObjects(root, child).
 		Build()
 
-	reconciler := NewChildReconciler(fakeClient).(*childReconciler)
+	fakeLogger := ctrl.Log.WithName("test")
+	reconciler := NewChildReconciler(fakeClient, fakeLogger).(*childReconciler)
 
 	// Run reconcile
 	_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: clientObjectKey(child)})
@@ -97,7 +99,8 @@ func TestReconcile_RemovesDeletedChildFromRoot(t *testing.T) {
 		WithObjects(root, child).
 		Build()
 
-	reconciler := NewChildReconciler(fakeClient).(*childReconciler)
+	fakeLogger := ctrl.Log.WithName("test")
+	reconciler := NewChildReconciler(fakeClient, fakeLogger).(*childReconciler)
 	_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: clientObjectKey(child)})
 	assert.NoError(t, err)
 
