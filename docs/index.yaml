@@ -2,8 +2,28 @@ apiVersion: v1
 entries:
   contour-root-reconciler:
   - apiVersion: v2
+    appVersion: 0.0.3
+    created: "2025-09-19T12:22:40.227068+02:00"
+    description: A Helm chart for installing Contour Root Reconciler
+    digest: 8587e040522e51f494c7605dea2587d10c4b49c829a3ca35e67c4b80fad46d22
+    name: contour-root-reconciler
+    type: application
+    urls:
+    - https://botchris.github.io/contour-root-reconciler/contour-root-reconciler-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v2
+    appVersion: 0.0.2
+    created: "2025-09-19T12:22:40.22638+02:00"
+    description: A Helm chart for installing Contour Root Reconciler
+    digest: b1c6796fb8eda2a21703a258a2744e7cc63c15af04ce029bd32c5d731cd9fb84
+    name: contour-root-reconciler
+    type: application
+    urls:
+    - https://botchris.github.io/contour-root-reconciler/contour-root-reconciler-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
     appVersion: latest
-    created: "2025-09-19T11:22:26.676751+02:00"
+    created: "2025-09-19T12:22:40.224226+02:00"
     description: A Helm chart for installing Contour Root Reconciler
     digest: a980156ee4bf334f78aa97cfcd1e82ba6b7b0305f3a96f71ec932592900fd892
     name: contour-root-reconciler
@@ -11,4 +31,4 @@ entries:
     urls:
     - https://botchris.github.io/contour-root-reconciler/contour-root-reconciler-0.0.1.tgz
     version: 0.0.1
-generated: "2025-09-19T11:22:26.676159+02:00"
+generated: "2025-09-19T12:22:40.220471+02:00"

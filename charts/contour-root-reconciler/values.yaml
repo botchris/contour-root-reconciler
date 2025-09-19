@@ -10,10 +10,10 @@ fullnameOverride: ""
 
 command:
   - /usr/local/bin/proxy-reconciler
-
 args:
   - "--metrics-bind-address=:8080"
   - "--health-probe-bind-address=:8081"
+  - "--leader-elect=true"
 
 service:
   type: ClusterIP

@@ -34,7 +34,7 @@ func main() {
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "Metrics endpoint bind address.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "Health probe bind address.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false, "Enable leader election for high availability.")
+	flag.BoolVar(&enableLeaderElection, "leader-elect", true, "Enable leader election for high availability.")
 
 	opts := zap.Options{Development: true}
 	opts.BindFlags(flag.CommandLine)

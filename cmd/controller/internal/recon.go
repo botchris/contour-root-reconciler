@@ -37,11 +37,16 @@ func (r *childReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	logger := r.logger.WithValues(
+	tags := []any{
 		"child", req.NamespacedName,
 		"resourceVersion", child.ResourceVersion,
-		"deletionTimestamp", child.DeletionTimestamp,
-	)
+	}
+
+	if child.DeletionTimestamp != nil {
+		tags = append(tags, "deletionTimestamp", child.DeletionTimestamp)
+	}
+
+	logger := r.logger.WithValues()
 
 	rootName, hasRoot := child.Labels["root-proxy"]
 	if !hasRoot {

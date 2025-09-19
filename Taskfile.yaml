@@ -7,7 +7,7 @@ tasks:
       Releases a new version de of project to Docker Hub and updates the Helm chart.
     requires:
       vars:
-        - name: VERSION
+        - VERSION
     cmds:
       - task: release:docker
         vars:
@@ -20,15 +20,35 @@ tasks:
     desc: Releases a new version of the Docker image to Docker Hub
     requires:
       vars:
-        - name: VERSION
+        - VERSION
+        - DOCKER_USERNAME
+        - DOCKER_PASSWORD
+    preconditions:
+      - sh: docker --version
+        msg: "Docker is required to run this task. Please install Docker and try again."
+      - sh: docker buildx version
+        msg: "Docker Buildx is required to run this task. Please install Docker Buildx and try again."
+      - sh: docker login -u "{{.DOCKER_USERNAME}}" -p "{{.DOCKER_PASSWORD}}"
+        msg: "Docker login failed. Please check your Docker Hub credentials."
     cmds:
-      - cmd: docker buildx build --no-cache --platform linux/amd64,linux/arm64,linux/386 -f ./Dockerfile -t botchrishub/contour-root-reconciler:{{.VERSION}}} -t botchrishub/contour-root-reconciler:latest --push .
+      - cmd: docker buildx build --no-cache --platform linux/amd64,linux/arm64,linux/386 -f ./Dockerfile -t botchrishub/contour-root-reconciler:{{.VERSION}} -t botchrishub/contour-root-reconciler:latest --push .
 
   release:helm:
     desc: Releases a new version of the Helm chart
     requires:
       vars:
-        - name: VERSION
+        - VERSION
+    preconditions:
+      - sh: helm version
+        msg: "Helm is required to run this task. Please install Helm and try again."
+      - sh: test -d docs/
+        msg: "The 'docs/' directory does not exist. Please create it and try again."
+      - sh: test -w docs/
+        msg: "The 'docs/' directory is not writable. Please check the permissions and try again."
+      - sh: test -d charts/contour-root-reconciler
+        msg: "The 'charts/contour-root-reconciler' directory does not exist. Please ensure the Helm chart is present and try again."
+      - sh: test -f charts/contour-root-reconciler/Chart.yaml
+        msg: "The 'charts/contour-root-reconciler/Chart.yaml' file does not exist. Please ensure the Helm chart is valid and try again."
     cmds:
       - cmd: helm package charts/contour-root-reconciler --destination docs/ --version {{.VERSION}} --app-version {{.VERSION}}
       - cmd: helm repo index docs/ --url https://botchris.github.io/contour-root-reconciler/
