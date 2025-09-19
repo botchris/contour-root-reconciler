@@ -1,0 +1,35 @@
+version: '3'
+
+tasks:
+  release:
+    desc: Releases a new version the of project
+    summary: |
+      Releases a new version de of project to Docker Hub and updates the Helm chart.
+    requires:
+      vars:
+        - name: VERSION
+    cmds:
+      - task: release:docker
+        vars:
+          VERSION: "{{.VERSION}}"
+      - task: release:helm
+        vars:
+          VERSION: "{{.VERSION}}"
+
+  release:docker:
+    desc: Releases a new version of the Docker image to Docker Hub
+    requires:
+      vars:
+        - name: VERSION
+    cmds:
+      - cmd: docker buildx build --no-cache --platform linux/amd64,linux/arm64,linux/386 -f ./Dockerfile -t botchrishub/contour-root-reconciler:{{.VERSION}}} --push .
+
+  release:helm:
+    desc: Releases a new version of the Helm chart
+    requires:
+      vars:
+        - name: VERSION
+    cmds:
+      - cmd: helm package charts/contour-root-reconciler --destination docs/ --version {{.VERSION}}
+      - cmd: helm repo index docs/ --url https://botchris.github.io/contour-root-reconciler/
+

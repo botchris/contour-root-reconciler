@@ -1,6 +1,0 @@
-release:
-	docker buildx build --no-cache --platform linux/amd64,linux/arm64,linux/386 -f ./Dockerfile -t botchrishub/contour-root-reconciler:latest --push .
-
-helm:
-	helm package charts/contour-root-reconciler --destination docs/ --version 0.0.1
-	helm repo index docs/ --url https://botchris.github.io/contour-root-reconciler/
