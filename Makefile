@@ -3,4 +3,4 @@ release:
 
 helm:
 	helm package charts/contour-root-reconciler --destination docs/ --version 0.0.2
-	helm repo index docs/ --url https://botchrishub.github.io/contour-root-reconciler/
+	helm repo index docs/ --url https://botchris.github.io/contour-root-reconciler/

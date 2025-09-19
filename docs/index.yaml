@@ -9,7 +9,7 @@ entries:
     name: contour-root-reconciler
     type: application
     urls:
-    - https://botchrishub.github.io/contour-root-reconciler/contour-root-reconciler-0.0.2.tgz
+    - https://botchris.github.io/contour-root-reconciler/contour-root-reconciler-0.0.2.tgz
     version: 0.0.2
   - apiVersion: v2
     appVersion: latest
@@ -19,6 +19,6 @@ entries:
     name: contour-root-reconciler
     type: application
     urls:
-    - https://botchrishub.github.io/contour-root-reconciler/contour-root-reconciler-0.0.1.tgz
+    - https://botchris.github.io/contour-root-reconciler/contour-root-reconciler-0.0.1.tgz
     version: 0.0.1
 generated: "2025-09-19T10:52:43.177021+02:00"
