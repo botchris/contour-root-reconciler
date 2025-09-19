@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: botchrishub/contour-root-reconciler
-  tag: "latest"
+  tag: "{{ .Chart.AppVersion }}"
   pullPolicy: Always
 
 nameOverride: ""

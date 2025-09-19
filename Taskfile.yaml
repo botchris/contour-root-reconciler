@@ -30,6 +30,6 @@ tasks:
       vars:
         - name: VERSION
     cmds:
-      - cmd: helm package charts/contour-root-reconciler --destination docs/ --version {{.VERSION}}
+      - cmd: helm package charts/contour-root-reconciler --destination docs/ --version {{.VERSION}} --app-version {{.VERSION}}
       - cmd: helm repo index docs/ --url https://botchris.github.io/contour-root-reconciler/
 
