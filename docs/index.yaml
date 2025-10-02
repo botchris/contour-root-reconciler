@@ -2,8 +2,18 @@ apiVersion: v1
 entries:
   contour-root-reconciler:
   - apiVersion: v2
+    appVersion: 0.0.5
+    created: "2025-10-02T19:15:38.059371+02:00"
+    description: A Helm chart for installing Contour Root Reconciler
+    digest: b0e11d21de57534615b4ab125915124c86f2bc022cf69a9deae274fb29f182b5
+    name: contour-root-reconciler
+    type: application
+    urls:
+    - https://botchris.github.io/contour-root-reconciler/contour-root-reconciler-0.0.5.tgz
+    version: 0.0.5
+  - apiVersion: v2
     appVersion: 0.0.4
-    created: "2025-09-19T12:35:29.964124+02:00"
+    created: "2025-10-02T19:15:38.057874+02:00"
     description: A Helm chart for installing Contour Root Reconciler
     digest: 75385d45e63ff6dd4f71984133a326f620640c864ad9e30e50759a2d29118920
     name: contour-root-reconciler
@@ -13,7 +23,7 @@ entries:
     version: 0.0.4
   - apiVersion: v2
     appVersion: 0.0.3
-    created: "2025-09-19T12:35:29.963713+02:00"
+    created: "2025-10-02T19:15:38.055014+02:00"
     description: A Helm chart for installing Contour Root Reconciler
     digest: 8587e040522e51f494c7605dea2587d10c4b49c829a3ca35e67c4b80fad46d22
     name: contour-root-reconciler
@@ -23,7 +33,7 @@ entries:
     version: 0.0.3
   - apiVersion: v2
     appVersion: 0.0.2
-    created: "2025-09-19T12:35:29.962736+02:00"
+    created: "2025-10-02T19:15:38.053065+02:00"
     description: A Helm chart for installing Contour Root Reconciler
     digest: b1c6796fb8eda2a21703a258a2744e7cc63c15af04ce029bd32c5d731cd9fb84
     name: contour-root-reconciler
@@ -33,7 +43,7 @@ entries:
     version: 0.0.2
   - apiVersion: v2
     appVersion: latest
-    created: "2025-09-19T12:35:29.961904+02:00"
+    created: "2025-10-02T19:15:38.051543+02:00"
     description: A Helm chart for installing Contour Root Reconciler
     digest: a980156ee4bf334f78aa97cfcd1e82ba6b7b0305f3a96f71ec932592900fd892
     name: contour-root-reconciler
@@ -41,4 +51,4 @@ entries:
     urls:
     - https://botchris.github.io/contour-root-reconciler/contour-root-reconciler-0.0.1.tgz
     version: 0.0.1
-generated: "2025-09-19T12:35:29.960543+02:00"
+generated: "2025-10-02T19:15:38.04718+02:00"
