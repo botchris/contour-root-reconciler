@@ -37,15 +37,6 @@ func (r *childReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	tags := []any{
-		"child", req.NamespacedName,
-		"resourceVersion", child.ResourceVersion,
-	}
-
-	if child.DeletionTimestamp != nil {
-		tags = append(tags, "deletionTimestamp", child.DeletionTimestamp)
-	}
-
 	logger := r.logger.WithValues()
 
 	rootName, hasRoot := child.Labels["root-proxy"]
@@ -53,11 +44,16 @@ func (r *childReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 
+	rootNamespace, hasRootNamespace := child.Labels["root-proxy-namespace"]
+	if !hasRootNamespace {
+		rootNamespace = child.Namespace
+	}
+
 	logger.Info("Reconciling child HTTPProxy", "root", rootName)
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		root := &schemav1.HTTPProxy{}
-		rootKey := client.ObjectKey{Namespace: child.Namespace, Name: rootName}
+		rootKey := client.ObjectKey{Namespace: rootNamespace, Name: rootName}
 
 		if err := r.client.Get(ctx, rootKey, root); err != nil {
 			return err

@@ -36,9 +36,10 @@ func TestReconcile_AddsChildToRoot(t *testing.T) {
 	child := &schemav1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "child-1",
-			Namespace: "default",
+			Namespace: "test",
 			Labels: map[string]string{
-				"root-proxy": "root",
+				"root-proxy":           "root",
+				"root-proxy-namespace": "default",
 			},
 		},
 	}
