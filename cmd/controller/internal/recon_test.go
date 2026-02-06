@@ -110,6 +110,79 @@ func TestReconcile_RemovesDeletedChildFromRoot(t *testing.T) {
 	assert.Len(t, updatedRoot.Spec.Includes, 0)
 }
 
+func TestReconcile_AddsChildToMultipleRoots(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	scheme := runtime.NewScheme()
+	childNamespace := "test"
+	require.NoError(t, schemav1.AddToScheme(scheme))
+
+	rootOne := &schemav1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root-one",
+			Namespace: "namespace-one",
+		},
+		Spec: schemav1.HTTPProxySpec{
+			Includes: []schemav1.Include{},
+		},
+	}
+
+	rootTwo := &schemav1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root-two",
+			Namespace: "namespace-two",
+		},
+		Spec: schemav1.HTTPProxySpec{
+			Includes: []schemav1.Include{},
+		},
+	}
+
+	rootThree := &schemav1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root-three",
+			Namespace: childNamespace,
+		},
+		Spec: schemav1.HTTPProxySpec{
+			Includes: []schemav1.Include{},
+		},
+	}
+
+	child := &schemav1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "child-multi",
+			Namespace: childNamespace,
+			Labels: map[string]string{
+				"root-proxy":           "root-one,    root-two, root-three",
+				"root-proxy-namespace": "namespace-one,  namespace-two,",
+			},
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(rootOne, rootTwo, rootThree, child).
+		Build()
+
+	fakeLogger := ctrl.Log.WithName("test")
+	reconciler := NewChildReconciler(fakeClient, fakeLogger).(*childReconciler)
+
+	_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: clientObjectKey(child)})
+	require.NoError(t, err)
+
+	updatedRootOne := &schemav1.HTTPProxy{}
+	assert.NoError(t, fakeClient.Get(ctx, clientObjectKey(rootOne), updatedRootOne))
+	assert.Len(t, updatedRootOne.Spec.Includes, 1)
+	assert.Equal(t, "child-multi", updatedRootOne.Spec.Includes[0].Name)
+	assert.Equal(t, "test", updatedRootOne.Spec.Includes[0].Namespace)
+
+	updatedRootTwo := &schemav1.HTTPProxy{}
+	assert.NoError(t, fakeClient.Get(ctx, clientObjectKey(rootTwo), updatedRootTwo))
+	assert.Len(t, updatedRootTwo.Spec.Includes, 1)
+	assert.Equal(t, "child-multi", updatedRootTwo.Spec.Includes[0].Name)
+	assert.Equal(t, "test", updatedRootTwo.Spec.Includes[0].Namespace)
+}
+
 // helper.
 func clientObjectKey(obj *schemav1.HTTPProxy) types.NamespacedName {
 	return types.NamespacedName{

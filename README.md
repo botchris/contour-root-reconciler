@@ -30,10 +30,13 @@ configuration remains consistent.
   based on labels.
 - Supports specifying the namespace of the root proxy if it differs from
   the child proxy's namespace.
+- Supports the same child proxy being included in multiple root proxies if needed.
 - Handles creation, updates, and deletion of child proxies.
 - Ensures that the root proxy always reflects the current set of child proxies.
 - Lightweight and easy to deploy in any Kubernetes cluster using Contour.
 - Open source and community-driven.
+- Provides metrics and health checks for monitoring the controller's status.
+- Supports leader election for high availability in multi-replica deployments.
 
 ## Installation
 
@@ -104,8 +107,8 @@ metadata:
   name: child-proxy-one
   namespace: my-child-namespace
   labels:
-    root-proxy: my-root-proxy # This label indicates the root proxy name
-    root-proxy-namespace: my-root-namespace # Optional: specify the root proxy namespace if different from the child proxy's namespace
+    root-proxy: "my-root-proxy,my-root-proxy-two" # This label indicates the root proxy name
+    root-proxy-namespace: "my-root-namespace,my-root-namespace-two" # Optional: specify the root proxy namespace if different from the child proxy's namespace
 spec:
   routes:
     - conditions:
@@ -116,8 +119,9 @@ spec:
           protocol: h2
 ```
 
-The controller will automatically update `my-root-proxy` to include
-`child-proxy-one`, resulting in something like follows:
+The controller will automatically update both `my-root-proxy`
+and `my-root-proxy-two` to include `child-proxy-one`, resulting
+in something like follows:
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -125,6 +129,20 @@ kind: HTTPProxy
 metadata:
   name: my-root-proxy
   namespace: my-root-namespace
+spec:
+  virtualhost:
+    fqdn: example.com
+    includes:
+      - name: child-proxy-one
+        namespace: my-child-namespace
+```
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: my-root-proxy-two
+  namespace: my-root-namespace-two
 spec:
   virtualhost:
     fqdn: example.com
