@@ -2,7 +2,9 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	schemav1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -37,39 +39,45 @@ func (r *childReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	logger := r.logger.WithValues()
+	logger := r.logger.WithValues("child-name", child.Name, "child-namespace", child.Namespace)
 
-	rootName, hasRoot := child.Labels["root-proxy"]
-	if !hasRoot {
+	logger.Info("Parsing child HTTPProxy for root labels")
+
+	rootSelectors, err := r.parseRootLabels(child)
+	if err != nil {
+		logger.Error(err, "Failed to parse root labels from child HTTPProxy", "child", child.Name, "namespace", child.Namespace)
+
 		return ctrl.Result{}, nil
 	}
 
-	rootNamespace, hasRootNamespace := child.Labels["root-proxy-namespace"]
-	if !hasRootNamespace {
-		rootNamespace = child.Namespace
+	errs := make([]error, 0)
+
+	for i := range rootSelectors {
+		reconLogger := logger.WithValues("root-name", rootSelectors[i].Name, "root-namespace", rootSelectors[i].Namespace)
+
+		reconLogger.Info("Reconciling child HTTPProxy")
+
+		rErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			rootSchema := &schemav1.HTTPProxy{}
+
+			if gErr := r.client.Get(ctx, rootSelectors[i], rootSchema); gErr != nil {
+				return gErr
+			}
+
+			return r.reconcileWithRoot(ctx, child, rootSchema)
+		})
+
+		if rErr != nil {
+			reconLogger.Error(rErr, "Failed to reconcile child with root")
+
+			errs = append(errs, rErr)
+		} else {
+			reconLogger.Info("Successfully reconciled child with root")
+		}
 	}
 
-	logger.Info("Reconciling child HTTPProxy", "root", rootName)
-
-	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		root := &schemav1.HTTPProxy{}
-		rootKey := client.ObjectKey{Namespace: rootNamespace, Name: rootName}
-
-		if err := r.client.Get(ctx, rootKey, root); err != nil {
-			return err
-		}
-
-		eErr := r.reconcileChild(ctx, root, child)
-		if eErr != nil {
-			logger.Error(eErr, "Failed to reconcile child with root", "root", rootKey)
-		} else {
-			logger.Info("Successfully reconciled child with root", "root", rootKey)
-		}
-
-		return eErr
-	})
-	if err != nil {
-		return ctrl.Result{}, err
+	if len(errs) > 0 {
+		return ctrl.Result{}, errors.Join(errs...)
 	}
 
 	return ctrl.Result{}, nil
@@ -79,7 +87,7 @@ func (r *childReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).For(&schemav1.HTTPProxy{}).Complete(r)
 }
 
-func (r *childReconciler) reconcileChild(ctx context.Context, root *schemav1.HTTPProxy, child *schemav1.HTTPProxy) error {
+func (r *childReconciler) reconcileWithRoot(ctx context.Context, child *schemav1.HTTPProxy, root *schemav1.HTTPProxy) error {
 	include := schemav1.Include{Name: child.Name, Namespace: child.Namespace}
 	changed := false
 	newIncludes := make([]schemav1.Include, 0)
@@ -148,4 +156,37 @@ func (r *childReconciler) containsImport(stack []schemav1.Include, target schema
 	}
 
 	return false
+}
+
+func (r *childReconciler) parseRootLabels(child *schemav1.HTTPProxy) ([]client.ObjectKey, error) {
+	names, hasRoot := child.Labels["root-proxy"]
+	if !hasRoot {
+		return nil, nil
+	}
+
+	namesList := strings.Split(names, ",")
+	spacesList := strings.Split(child.Labels["root-proxy-namespace"], ",")
+
+	if len(spacesList) > 0 && len(spacesList) != len(namesList) {
+		return nil, fmt.Errorf("invalid root-proxy-namespace label: expected %d namespaces but got %d", len(namesList), len(spacesList))
+	}
+
+	out := make([]client.ObjectKey, 0)
+
+	for i := range namesList {
+		root := client.ObjectKey{
+			Name:      strings.TrimSpace(namesList[i]),
+			Namespace: child.Namespace,
+		}
+
+		if len(spacesList) > 0 {
+			if cleanNamespace := strings.TrimSpace(spacesList[i]); cleanNamespace != "" {
+				root.Namespace = cleanNamespace
+			}
+		}
+
+		out = append(out, root)
+	}
+
+	return out, nil
 }
