@@ -41,11 +41,11 @@ func (r *childReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	logger := r.logger.WithValues("child-name", child.Name, "child-namespace", child.Namespace)
 
-	logger.Info("Parsing child HTTPProxy for root labels")
+	logger.Info("Parsing child HTTPProxy for root annotations")
 
-	rootSelectors, err := r.parseRootLabels(child)
+	rootSelectors, err := r.parseRootAnnotations(child)
 	if err != nil {
-		logger.Error(err, "Failed to parse root labels from child HTTPProxy", "child", child.Name, "namespace", child.Namespace)
+		logger.Error(err, "Failed to parse root annotations from child HTTPProxy", "child", child.Name, "namespace", child.Namespace)
 
 		return ctrl.Result{}, nil
 	}
@@ -158,17 +158,17 @@ func (r *childReconciler) containsImport(stack []schemav1.Include, target schema
 	return false
 }
 
-func (r *childReconciler) parseRootLabels(child *schemav1.HTTPProxy) ([]client.ObjectKey, error) {
-	names, hasRoot := child.Labels["root-proxy"]
+func (r *childReconciler) parseRootAnnotations(child *schemav1.HTTPProxy) ([]client.ObjectKey, error) {
+	names, hasRoot := child.Annotations["root-proxy"]
 	if !hasRoot {
 		return nil, nil
 	}
 
 	namesList := strings.Split(names, ",")
-	spacesList := strings.Split(child.Labels["root-proxy-namespace"], ",")
+	spacesList := strings.Split(child.Annotations["root-proxy-namespace"], ",")
 
 	if len(spacesList) > 0 && len(spacesList) != len(namesList) {
-		return nil, fmt.Errorf("invalid root-proxy-namespace label: expected %d namespaces but got %d", len(namesList), len(spacesList))
+		return nil, fmt.Errorf("invalid root-proxy-namespace annotation: expected %d namespaces but got %d", len(namesList), len(spacesList))
 	}
 
 	out := make([]client.ObjectKey, 0)

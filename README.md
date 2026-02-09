@@ -4,13 +4,13 @@ This package provides a Kubernetes controller that reconciles `HTTPProxy`
 resources to ensure that they are correctly configured to use a root proxy.
 
 Each time a child `HTTPProxy` is modified (created, updated, deleted), the
-controller checks if it has a `root-proxy` label defined. If so, it retrieves
-the corresponding root `HTTPProxy` and appends the child to the root's
-`include` section.
+controller checks if it has a `root-proxy` annotation defined. If so, it
+retrieves the corresponding root `HTTPProxy` and appends the child to the
+root's `include` section.
 
 This prevents the need to manually update root proxies whenever a new child
 proxy is added. Instead, the controller automatically manages the relationship
-between root and child proxies based on labels.
+between root and child proxies based on annotations.
 
 ## Motivation
 
@@ -27,7 +27,7 @@ configuration remains consistent.
 ## Features
 
 - Automatically updates root `HTTPProxy` resources to include child proxies
-  based on labels.
+  based on annotations.
 - Supports specifying the namespace of the root proxy if it differs from
   the child proxy's namespace.
 - Supports the same child proxy being included in multiple root proxies if needed.
@@ -71,13 +71,13 @@ as a starting point.
 
 ## Usage
 
-Label your child `HTTPProxy` resources with the `root-proxy` label, specifying
-the name of the root proxy.
+Annotate your child `HTTPProxy` resources with the `root-proxy` annotation,
+specifying the name of the root proxy.
 
 The reconciler assumes that the root proxy is in the same namespace as the
 child proxy. If your root proxy is in a different namespace, you can use
-the `root-proxy-namespace` label to specify the namespace where the root
-proxy resides.
+the `root-proxy-namespace` annotation to specify the namespace where the
+root proxy resides.
 
 ### Example
 
@@ -97,7 +97,7 @@ spec:
 ```
 
 And a child `HTTPProxy` named `child-proxy-one` located in the namespace
-`my-child-namespace`, labeled to indicate it should be included in the root
+`my-child-namespace`, annotated to indicate it should be included in the root
 proxy:
 
 ```yaml
@@ -106,9 +106,9 @@ kind: HTTPProxy
 metadata:
   name: child-proxy-one
   namespace: my-child-namespace
-  labels:
-    root-proxy: "my-root-proxy,my-root-proxy-two" # This label indicates the root proxy name
-    root-proxy-namespace: "my-root-namespace,my-root-namespace-two" # Optional: specify the root proxy namespace if different from the child proxy's namespace
+  annotations:
+    root-proxy: "my-root-proxy,my-root-proxy-two" # Name of the root proxy(s) to include this child proxy in
+    root-proxy-namespace: "my-root-namespace,my-root-namespace-two" # Optional: Namespace(s) of the root proxy(s) if different from the child proxy's namespace
 spec:
   routes:
     - conditions:
