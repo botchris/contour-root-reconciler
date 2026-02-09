@@ -72,12 +72,13 @@ as a starting point.
 ## Usage
 
 Annotate your child `HTTPProxy` resources with the `root-proxy` annotation,
-specifying the name of the root proxy.
+specifying the name of the root proxy, optionally followed by its namespace in
+square brackets, e.g. `my-root-proxy[my-root-namespace]`. If the namespace is
+not specified, the controller will assume that the root proxy is in the same
+namespace as the child proxy.
 
 The reconciler assumes that the root proxy is in the same namespace as the
-child proxy. If your root proxy is in a different namespace, you can use
-the `root-proxy-namespace` annotation to specify the namespace where the
-root proxy resides.
+child proxy if no namespace is specified in the annotation.
 
 ### Example
 
@@ -107,8 +108,7 @@ metadata:
   name: child-proxy-one
   namespace: my-child-namespace
   annotations:
-    root-proxy: "my-root-proxy,my-root-proxy-two" # Name of the root proxy(s) to include this child proxy in
-    root-proxy-namespace: "my-root-namespace,my-root-namespace-two" # Optional: Namespace(s) of the root proxy(s) if different from the child proxy's namespace
+    root-proxy: "my-root-proxy[my-root-namespace],my-root-proxy-two[my-root-namespace-two]" # Comma-separated list of root proxies, optionally with namespace in brackets
 spec:
   routes:
     - conditions:

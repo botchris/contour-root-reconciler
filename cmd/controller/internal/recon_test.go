@@ -38,8 +38,7 @@ func TestReconcile_AddsChildToRoot(t *testing.T) {
 			Name:      "child-1",
 			Namespace: "test",
 			Annotations: map[string]string{
-				"root-proxy":           "root",
-				"root-proxy-namespace": "default",
+				"root-proxy": "root[default]",
 			},
 		},
 	}
@@ -87,11 +86,15 @@ func TestReconcile_RemovesDeletedChildFromRoot(t *testing.T) {
 	now := metav1.NewTime(time.Now())
 	child := &schemav1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:              "child-1",
-			Namespace:         "default",
-			Annotations:       map[string]string{"root-proxy": "root"},
+			Name:      "child-1",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"root-proxy": "root",
+			},
 			DeletionTimestamp: &now,
-			Finalizers:        []string{"test.finalizer"},
+			Finalizers: []string{
+				"test.finalizer",
+			},
 		},
 	}
 
@@ -153,8 +156,7 @@ func TestReconcile_AddsChildToMultipleRoots(t *testing.T) {
 			Name:      "child-multi",
 			Namespace: childNamespace,
 			Annotations: map[string]string{
-				"root-proxy":           "root-one,    root-two, root-three",
-				"root-proxy-namespace": "namespace-one,  namespace-two,",
+				"root-proxy": "root-one[namespace-one],    root-two[namespace-two], root-three",
 			},
 		},
 	}

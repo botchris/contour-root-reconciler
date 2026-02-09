@@ -43,7 +43,7 @@ func (r *childReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	logger.Info("Parsing child HTTPProxy for root annotations")
 
-	rootSelectors, err := r.parseRootAnnotations(child)
+	rootSelectors, err := r.parseRootRefs(child)
 	if err != nil {
 		logger.Error(err, "Failed to parse root annotations from child HTTPProxy", "child", child.Name, "namespace", child.Namespace)
 
@@ -158,17 +158,53 @@ func (r *childReconciler) containsImport(stack []schemav1.Include, target schema
 	return false
 }
 
-func (r *childReconciler) parseRootAnnotations(child *schemav1.HTTPProxy) ([]client.ObjectKey, error) {
-	names, hasRoot := child.Annotations["root-proxy"]
+func (r *childReconciler) parseRootRefs(child *schemav1.HTTPProxy) ([]client.ObjectKey, error) {
+	// If no "root-proxy" annotation is found, check for the old label-based approach for backward compatibility.
+	if _, ok := child.Annotations["root-proxy"]; !ok {
+		return r.parseRootLabels(child)
+	}
+
+	annotations, hasRoot := child.Annotations["root-proxy"]
+	if !hasRoot {
+		return nil, nil
+	}
+
+	list := strings.Split(annotations, ",")
+	out := make([]client.ObjectKey, 0)
+
+	for i := range list {
+		rootName := strings.TrimSpace(list[i])
+		rootNamespace := child.Namespace
+
+		if strings.Contains(rootName, "[") && strings.Contains(rootName, "]") {
+			parts := strings.Split(rootName, "[")
+			rootName = strings.TrimSpace(parts[0])
+			rootNamespace = strings.TrimSuffix(strings.TrimSpace(parts[1]), "]")
+		}
+
+		out = append(out, client.ObjectKey{
+			Name:      strings.TrimSpace(rootName),
+			Namespace: strings.TrimSpace(rootNamespace),
+		})
+	}
+
+	return out, nil
+}
+
+// parseRootLabels is a helper function to parse root references from labels.
+// Deprecated: this function is only used for backward compatibility with the old label-based
+// approach and should be removed in future versions.
+func (r *childReconciler) parseRootLabels(child *schemav1.HTTPProxy) ([]client.ObjectKey, error) {
+	names, hasRoot := child.Labels["root-proxy"]
 	if !hasRoot {
 		return nil, nil
 	}
 
 	namesList := strings.Split(names, ",")
-	spacesList := strings.Split(child.Annotations["root-proxy-namespace"], ",")
+	spacesList := strings.Split(child.Labels["root-proxy-namespace"], ",")
 
 	if len(spacesList) > 0 && len(spacesList) != len(namesList) {
-		return nil, fmt.Errorf("invalid root-proxy-namespace annotation: expected %d namespaces but got %d", len(namesList), len(spacesList))
+		return nil, fmt.Errorf("invalid root-proxy-namespace label: expected %d namespaces but got %d", len(namesList), len(spacesList))
 	}
 
 	out := make([]client.ObjectKey, 0)
